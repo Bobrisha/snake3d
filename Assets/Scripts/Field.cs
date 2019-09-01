@@ -7,35 +7,53 @@ namespace Snake
 {
     public class Field : MonoBehaviour
     {
+        #region Fields
+
         const float AppleSpawnCooldown = 3f;
         
 
         [SerializeField] Snake snakePrefab = default;
         [SerializeField] LevelObject applePrefab = default;
 
+
         LevelObject[,,] field = new LevelObject[15, 15, 15];
-
         List<LevelObject> apples = new List<LevelObject>();
+        List<Snake> snakes = new List<Snake>();
 
+        #endregion
+
+
+
+        #region Unity lifecycle
 
         void OnEnable()
         {
             Snake.OnAppleEaten += Snake_OnAppleEaten;
+            Snake.OnCollision += Snake_OnCollision;
         }
 
 
         void OnDisable()
         {
             Snake.OnAppleEaten -= Snake_OnAppleEaten;
+            Snake.OnCollision -= Snake_OnCollision;
         }
 
        
         void Start()
         {
-            Instantiate(snakePrefab).Init(field, apples);
+            Snake snake = Instantiate(snakePrefab);
+            snake.Init(field, apples);
+            snakes.Add(snake);
+
             StartCoroutine(SpawnApple());
         }
 
+        #endregion
+
+
+
+        #region Private methods
 
         IEnumerator SpawnApple()
         {
@@ -63,10 +81,32 @@ namespace Snake
         }
 
 
-        void Snake_OnAppleEaten(LevelObject apple)
+        void Snake_OnAppleEaten(PositionOnField applePosition)
         {
-            apples.Remove(apple);
-            Destroy(apple.gameObject);
+            for (int i = 0; i < apples.Count; i++)
+            {  
+                if (apples[i].PositionOnField.X == applePosition.X 
+                    && apples[i].PositionOnField.Y == applePosition.Y 
+                    && apples[i].PositionOnField.Z == applePosition.Z)
+                {
+                    Destroy(apples[i].gameObject);
+                    apples.Remove(apples[i]);
+                    return;
+                }
+            }
         }
+
+
+        void Snake_OnCollision(Snake snake)
+        {
+            snakes.Remove(snake);
+
+            if (snakes.Count == 0)
+            {
+                print("All snakes are DEAD!!!");
+            }
+        }
+
+        #endregion
     }
 }

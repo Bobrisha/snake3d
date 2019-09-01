@@ -9,46 +9,40 @@ namespace Snake
 {
     public class Snake : MonoBehaviour
     {
-        enum Direction
-        {
-            Up = 1,
-            Down = 2,
-            Left = 3,
-            Right = 4,
-            Forward = 5,
-            Backward = 6
-        }
-
+        #region Fields
 
         const int StartSegmentsCount = 3;
         const float Step = 1f;
-        const float StepCooldown = 0.1f;
-        const float DirectionUpdateCooldown = 2f;
+        const float StepCooldown = 0.05f;
+        const float DirectionUpdateCooldown = 0.5f;
 
 
-        public static event Action<LevelObject> OnAppleEaten = delegate { };
+        public static event Action<PositionOnField> OnAppleEaten = delegate { };
+        public static event Action<Snake> OnCollision = delegate { };
 
 
         [SerializeField] Segment segmentPrefab = default;
         [SerializeField] Material headMaterial = default;
         [SerializeField] Material tailMaterial = default;
 
-        GameObject head;
 
-        List<Segment> segments = new List<Segment>();
-
-        Direction currentDirection = default;
-
-        LevelObject[,,] field;
-
-        List<LevelObject> apples;
+        Direction currentDirection = Direction.Up;
 
         Segment headSegment;
+        List<Segment> segments = new List<Segment>();
+        List<LevelObject> apples;
 
+        LevelObject[,,] field;
+        
         Coroutine SetRandomDirectionCoroutine;
 
         bool hasAppleToEat;
 
+        #endregion
+
+
+
+        #region Public methods
 
         public void Init(LevelObject[,,] field, List<LevelObject> apples)
         {
@@ -57,7 +51,7 @@ namespace Snake
 
             for (int i = 0; i < StartSegmentsCount; i++)
             {
-                Segment newSegment = Instantiate(segmentPrefab, new Vector3(0.0f, i * Step, 0.0f), Quaternion.identity);
+                Segment newSegment = Instantiate(segmentPrefab, new Vector3(0.0f, i * Step, 0.0f), Quaternion.identity, transform);
                 segments.Add(newSegment);
 
                 field[0, i, 0] = newSegment;
@@ -65,11 +59,17 @@ namespace Snake
 
                 headSegment = newSegment;
             }
+            
 
             SetRandomDirectionCoroutine = StartCoroutine(SetRandomDirection());
             StartCoroutine(Move());
         }
 
+        #endregion
+
+
+
+        #region Private methods
 
         IEnumerator Move()
         {
@@ -81,23 +81,22 @@ namespace Snake
 
                 if (hasAppleToEat)
                 {
-                    OnAppleEaten(field[headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z]);
+                    hasAppleToEat = false;
+                    
                     SetRandomDirectionCoroutine = StartCoroutine(SetRandomDirection());
-
-                    tailSegment = Instantiate(segmentPrefab);
+                    tailSegment = Instantiate(segmentPrefab, transform);
                 }
                 else
                 {
-                    segments.Remove(tailSegment);
                     field[tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z] = null;
+                    segments.Remove(tailSegment);
                 }
-
 
                 CheckDirection();
 
 
                 Vector3 headPosition = headSegment.transform.position;
-                tailSegment.PositionOnField = headSegment.PositionOnField;
+                tailSegment.PositionOnField = new PositionOnField(headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z); ;
 
                 switch (currentDirection)
                 {
@@ -133,17 +132,28 @@ namespace Snake
                 }
 
                 headSegment.SetMaterial(tailMaterial);
-
+                tailSegment.SetMaterial(headMaterial);
                 segments.Add(tailSegment);
+
+                LevelObject newHeadFieldPoint = field[tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z];
+
+                if (newHeadFieldPoint != null && newHeadFieldPoint.Type == LevelObjectTypes.Segment)
+                {
+                    OnCollision(this);
+                    segments.Clear();
+                    Destroy(gameObject);
+                }
+
+                if (newHeadFieldPoint != null && newHeadFieldPoint.Type == LevelObjectTypes.Apple)
+                {
+                    OnAppleEaten(tailSegment.PositionOnField);
+                    hasAppleToEat = true;
+                }
+                
+
+                field[tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z] = tailSegment;
+
                 headSegment = tailSegment;
-
-                headSegment.SetMaterial(headMaterial);
-
-                LevelObject currentHeadFieldPoint = field[headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z];
-
-                hasAppleToEat = currentHeadFieldPoint != null && currentHeadFieldPoint.Type == LevelObjectTypes.Apple;
-
-                currentHeadFieldPoint = headSegment;
             }
         }
 
@@ -250,5 +260,7 @@ namespace Snake
                     break;
             }
         }
+
+        #endregion
     }
 }
