@@ -7,7 +7,8 @@ namespace Snake
     {
         None = 0,
 
-        Segment = 1
+        Segment = 1,
+        Apple = 10
     }
 
 

@@ -26,6 +26,9 @@ namespace Snake
         const float DirectionUpdateCooldown = 2f;
 
 
+        public static event Action<LevelObject> OnAppleEaten = delegate { };
+
+
         [SerializeField] Segment segmentPrefab = default;
         [SerializeField] Material headMaterial = default;
         [SerializeField] Material tailMaterial = default;
@@ -38,12 +41,19 @@ namespace Snake
 
         LevelObject[,,] field;
 
+        List<LevelObject> apples;
+
         Segment headSegment;
 
+        Coroutine SetRandomDirectionCoroutine;
 
-        public void Init(LevelObject[,,] field)
+        bool hasAppleToEat;
+
+
+        public void Init(LevelObject[,,] field, List<LevelObject> apples)
         {
             this.field = field;
+            this.apples = apples;
 
             for (int i = 0; i < StartSegmentsCount; i++)
             {
@@ -56,7 +66,7 @@ namespace Snake
                 headSegment = newSegment;
             }
 
-            StartCoroutine(SetRandomDirection());
+            SetRandomDirectionCoroutine = StartCoroutine(SetRandomDirection());
             StartCoroutine(Move());
         }
 
@@ -68,13 +78,23 @@ namespace Snake
                 yield return new WaitForSeconds(StepCooldown);
 
                 Segment tailSegment = segments.First();
-                segments.Remove(tailSegment);
-                field[tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z] = null;
 
-               
+                if (hasAppleToEat)
+                {
+                    OnAppleEaten(field[headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z]);
+                    SetRandomDirectionCoroutine = StartCoroutine(SetRandomDirection());
+
+                    tailSegment = Instantiate(segmentPrefab);
+                }
+                else
+                {
+                    segments.Remove(tailSegment);
+                    field[tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z] = null;
+                }
 
 
                 CheckDirection();
+
 
                 Vector3 headPosition = headSegment.transform.position;
                 tailSegment.PositionOnField = headSegment.PositionOnField;
@@ -84,7 +104,6 @@ namespace Snake
                     case Direction.Up:
                         tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y + Step, headPosition.z);
                         tailSegment.PositionOnField.Y++;
-
                         break;
 
                     case Direction.Down:
@@ -112,6 +131,7 @@ namespace Snake
                         tailSegment.PositionOnField.Z--;
                         break;
                 }
+
                 headSegment.SetMaterial(tailMaterial);
 
                 segments.Add(tailSegment);
@@ -119,8 +139,11 @@ namespace Snake
 
                 headSegment.SetMaterial(headMaterial);
 
-                print($" X : {headSegment.PositionOnField.X}  Y : {headSegment.PositionOnField.Y}  Z : {headSegment.PositionOnField.Z}");
-                field[headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z] = headSegment;
+                LevelObject currentHeadFieldPoint = field[headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z];
+
+                hasAppleToEat = currentHeadFieldPoint != null && currentHeadFieldPoint.Type == LevelObjectTypes.Apple;
+
+                currentHeadFieldPoint = headSegment;
             }
         }
 
@@ -165,6 +188,35 @@ namespace Snake
 
         void CheckDirection()
         {
+            bool isSnakeHasTarget = false;
+
+            for (int i = 0; i < apples.Count; i++)
+            {
+                if (apples[i].PositionOnField.X == headSegment.PositionOnField.X && apples[i].PositionOnField.Y == headSegment.PositionOnField.Y)
+                {
+                    currentDirection = apples[i].PositionOnField.Z > headSegment.PositionOnField.Z ? Direction.Forward : Direction.Backward;
+                    isSnakeHasTarget = true;
+                }
+
+                if (apples[i].PositionOnField.Y == headSegment.PositionOnField.Y && apples[i].PositionOnField.Z == headSegment.PositionOnField.Z)
+                {
+                    currentDirection = apples[i].PositionOnField.X > headSegment.PositionOnField.X ? Direction.Right : Direction.Left;
+                    isSnakeHasTarget = true;
+                }
+
+                if (apples[i].PositionOnField.Z == headSegment.PositionOnField.Z && apples[i].PositionOnField.X == headSegment.PositionOnField.X)
+                {
+                    currentDirection = apples[i].PositionOnField.Y > headSegment.PositionOnField.Y ? Direction.Up : Direction.Down;
+                    isSnakeHasTarget = true;
+                }
+            }
+
+            if (isSnakeHasTarget)
+            {
+                StopCoroutine(SetRandomDirectionCoroutine);
+                return;
+            }
+      
             switch (currentDirection)
             {
                 case Direction.Right:

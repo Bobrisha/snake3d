@@ -191,7 +191,6 @@ GameObject:
   m_Component:
   - component: {fileID: 534669905}
   - component: {fileID: 534669904}
-  - component: {fileID: 534669903}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -199,14 +198,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &534669903
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 534669902}
-  m_Enabled: 1
 --- !u!20 &534669904
 Camera:
   m_ObjectHideFlags: 0
@@ -216,8 +207,8 @@ Camera:
   m_GameObject: {fileID: 534669902}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.21867211, g: 0.22902079, b: 0.24528301, a: 0}
   m_projectionMatrixMode: 1
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
@@ -256,13 +247,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 534669902}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0.16773124, y: 0.25488707, z: -0.044943456, w: 0.95125127}
+  m_LocalPosition: {x: -10, y: 20, z: -25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 20, y: 30, z: 0}
 --- !u!1 &1813308489
 GameObject:
   m_ObjectHideFlags: 0
@@ -293,7 +284,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0494e707abd160418287b3e6de8be7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SnakePrefab: {fileID: 9003720206491119401, guid: d0a2026c79af8834397a733ae3b73738,
+  snakePrefab: {fileID: 9003720206491119401, guid: d0a2026c79af8834397a733ae3b73738,
+    type: 3}
+  applePrefab: {fileID: 8710325913012538010, guid: ba78a674a53cccf4fae27b8d32cc7dce,
     type: 3}
 --- !u!4 &1813308491
 Transform:
