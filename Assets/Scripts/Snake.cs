@@ -22,25 +22,39 @@ namespace Snake
 
 
         const int StartSegmentsCount = 3;
-        const float Step = 0.1f;
+        const float Step = 1f;
         const float StepCooldown = 0.3f;
         const float DirectionUpdateCooldown = 5f;
 
 
-        [SerializeField] GameObject segmentPrefab = default;
+        [SerializeField] LevelObject segmentPrefab = default;
 
         GameObject head;
 
-        List<GameObject> segments = new List<GameObject>();
+        List<LevelObject> segments = new List<LevelObject>();
 
         Direction currentDirection = default;
 
+        LevelObject[,,] field;
 
-        void Start()
+        Vector3 headPositionOnField;
+
+        LevelObject headSegment;
+
+
+        public void Init(LevelObject[,,] field)
         {
+            this.field = field;
+
             for (int i = 0; i < StartSegmentsCount; i++)
             {
-                segments.Add(Instantiate(segmentPrefab, new Vector3(0.0f, i * Step, 0.0f), Quaternion.identity));
+                LevelObject newSegment = Instantiate(segmentPrefab, new Vector3(0.0f, i * Step, 0.0f), Quaternion.identity);
+                segments.Add(newSegment);
+
+                field[i, 0, 0] = newSegment;
+                newSegment.PositionOnField = new Vector3(i, 0, 0);
+
+                headSegment = newSegment;
             }
 
             StartCoroutine(SetRandomDirection());
@@ -54,38 +68,48 @@ namespace Snake
             {
                 yield return new WaitForSeconds(StepCooldown);
 
+                LevelObject tailSegment = segments.First();
+                segments.Remove(tailSegment);
+                field[(int)tailSegment.PositionOnField.x, (int)tailSegment.PositionOnField.y, (int)tailSegment.PositionOnField.z] = null;
+
                 Vector3 headPosition = segments.Last().transform.position;
 
                 switch (currentDirection)
                 {
                     case Direction.Up:
-                        segments.First().transform.position = new Vector3(headPosition.x, headPosition.y + Step, headPosition.z);
+                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y + Step, headPosition.z);
+                        tailSegment.PositionOnField = headPosition + Vector3.up;
+
                         break;
 
                     case Direction.Down:
-                        segments.First().transform.position = new Vector3(headPosition.x, headPosition.y - Step, headPosition.z);
+                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y - Step, headPosition.z);
+                        tailSegment.PositionOnField = headPosition + Vector3.down;
                         break;
 
                     case Direction.Left:
-                        segments.First().transform.position = new Vector3(headPosition.x - Step, headPosition.y, headPosition.z);
+                        tailSegment.transform.position = new Vector3(headPosition.x - Step, headPosition.y, headPosition.z);
+                        tailSegment.PositionOnField = headPosition + Vector3.left;
                         break;
 
                     case Direction.Right:
-                        segments.First().transform.position = new Vector3(headPosition.x + Step, headPosition.y, headPosition.z);
+                        tailSegment.transform.position = new Vector3(headPosition.x + Step, headPosition.y, headPosition.z);
+                        tailSegment.PositionOnField = headPosition + Vector3.right;
                         break;
 
                     case Direction.Forward:
-                        segments.First().transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z + Step);
+                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z + Step);
+                        tailSegment.PositionOnField = headPosition + Vector3.forward;
                         break;
 
                     case Direction.Backward:
-                        segments.First().transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z - Step);
+                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z - Step);
+                        tailSegment.PositionOnField = headPosition + Vector3.back;
                         break;
                 }
 
-                GameObject tailSegment = segments.First();
-                segments.Remove(tailSegment);
                 segments.Add(tailSegment);
+                field[(int)tailSegment.PositionOnField.x, (int)tailSegment.PositionOnField.y, (int)tailSegment.PositionOnField.z] = tailSegment;
             }
         }
 
@@ -94,7 +118,7 @@ namespace Snake
         {
             while (true)
             {
-                currentDirection = (Direction)Random.Range(1, 7);
+                currentDirection = (Direction)UnityEngine.Random.Range(1, 7);
                 yield return new WaitForSeconds(DirectionUpdateCooldown);
             }
         }
