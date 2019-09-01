@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e5c5100fcae36e4fab52f5653209543, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: 
+  fieldSizeX: 15
+  fieldSizeY: 15
+  fieldSizeZ: 15
+  snakesCount: 4
+  startSegmentsCount: 3
+  step: 1
+  stepCooldown: 0.05
+  directionUpdateCooldown: 0.5
+  appleSpawnCooldown: 3

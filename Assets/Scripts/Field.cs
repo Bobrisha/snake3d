@@ -9,14 +9,14 @@ namespace Snake
     {
         #region Fields
 
-        const float AppleSpawnCooldown = 3f;
-        
-
+        [SerializeField] GameConfig config = default;
         [SerializeField] Snake snakePrefab = default;
         [SerializeField] LevelObject applePrefab = default;
 
 
-        LevelObject[,,] field = new LevelObject[15, 15, 15];
+        LevelObject[,,] field;
+        PositionOnField[] startSnakesPositions;
+
         List<LevelObject> apples = new List<LevelObject>();
         List<Snake> snakes = new List<Snake>();
 
@@ -25,6 +25,22 @@ namespace Snake
 
 
         #region Unity lifecycle
+        
+        void Awake()
+        {
+            field = new LevelObject[config.FieldSizeX, config.FieldSizeY, config.FieldSizeZ];
+
+            startSnakesPositions = new PositionOnField[]
+            {
+                new PositionOnField(0, 0, 0),
+                new PositionOnField(config.FieldSizeX - 1, 0, 0),
+                new PositionOnField(0, 0, config.FieldSizeZ - 1),
+                new PositionOnField(config.FieldSizeX - 1, 0, config.FieldSizeZ - 1)
+            };
+
+            StartGame();
+        }
+
 
         void OnEnable()
         {
@@ -39,41 +55,45 @@ namespace Snake
             Snake.OnCollision -= Snake_OnCollision;
         }
 
-       
-        void Start()
-        {
-            Snake snake = Instantiate(snakePrefab);
-            snake.Init(field, apples);
-            snakes.Add(snake);
-
-            StartCoroutine(SpawnApple());
-        }
-
         #endregion
 
 
 
         #region Private methods
 
+        void StartGame()
+        {
+            for (int i = 0; i < config.SnakesCount; i++)
+            {
+                Snake snake = Instantiate(snakePrefab);
+                snake.Init(field, apples, config, startSnakesPositions[i]);
+                snakes.Add(snake);
+            }
+
+            StartCoroutine(SpawnApple());
+        }
+
+
         IEnumerator SpawnApple()
         {
             while (true)
             {
-                yield return new WaitForSeconds(AppleSpawnCooldown);
+                yield return new WaitForSeconds(config.AppleSpawnCooldown);
 
-                int x = Random.Range(0, 15);
-                int y = Random.Range(0, 15);
-                int z = Random.Range(0, 15);
+                int x = Random.Range(0, config.FieldSizeX);
+                int y = Random.Range(0, config.FieldSizeY);
+                int z = Random.Range(0, config.FieldSizeZ);
 
                 while (field[x, y, z] != null)
                 {
-                    x = Random.Range(0, 15);
-                    y = Random.Range(0, 15);
-                    z = Random.Range(0, 15);
+                    x = Random.Range(0, config.FieldSizeX);
+                    y = Random.Range(0, config.FieldSizeY);
+                    z = Random.Range(0, config.FieldSizeZ);
                 }
 
-                LevelObject apple = Instantiate(applePrefab, new Vector3(x, y, z), Quaternion.identity);
+                LevelObject apple = Instantiate(applePrefab, transform);
                 apple.PositionOnField = new PositionOnField(x, y, z);
+                apple.transform.position = new Vector3(apple.PositionOnField.X, apple.PositionOnField.Y, apple.PositionOnField.Z) * config.Step;
                 field[x, y, z] = apple;
 
                 apples.Add(apple);
@@ -101,10 +121,18 @@ namespace Snake
         {
             snakes.Remove(snake);
 
-            if (snakes.Count == 0)
+            if (snakes.Count != 0) return;
+
+            print("All snakes are DEAD!!!");
+
+            for (int i = 0; i < apples.Count; i++)
             {
-                print("All snakes are DEAD!!!");
+                Destroy(apples[i].gameObject);
             }
+            apples.Clear();
+
+            print("Here we go again)");
+            StartGame();
         }
 
         #endregion

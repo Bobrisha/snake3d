@@ -284,6 +284,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0494e707abd160418287b3e6de8be7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: dff8f294e83740a4aa2ca72b6810424f, type: 2}
   snakePrefab: {fileID: 9003720206491119401, guid: d0a2026c79af8834397a733ae3b73738,
     type: 3}
   applePrefab: {fileID: 8710325913012538010, guid: ba78a674a53cccf4fae27b8d32cc7dce,

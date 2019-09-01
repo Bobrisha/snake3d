@@ -11,12 +11,6 @@ namespace Snake
     {
         #region Fields
 
-        const int StartSegmentsCount = 3;
-        const float Step = 1f;
-        const float StepCooldown = 0.05f;
-        const float DirectionUpdateCooldown = 0.5f;
-
-
         public static event Action<PositionOnField> OnAppleEaten = delegate { };
         public static event Action<Snake> OnCollision = delegate { };
 
@@ -27,6 +21,8 @@ namespace Snake
 
 
         Direction currentDirection = Direction.Up;
+
+        GameConfig config;
 
         Segment headSegment;
         List<Segment> segments = new List<Segment>();
@@ -44,23 +40,24 @@ namespace Snake
 
         #region Public methods
 
-        public void Init(LevelObject[,,] field, List<LevelObject> apples)
+        public void Init(LevelObject[,,] field, List<LevelObject> apples, GameConfig config, PositionOnField startPosition)
         {
+            this.config = config;
             this.field = field;
             this.apples = apples;
 
-            for (int i = 0; i < StartSegmentsCount; i++)
+            for (int i = 0; i < config.StartSegmentsCount; i++)
             {
-                Segment newSegment = Instantiate(segmentPrefab, new Vector3(0.0f, i * Step, 0.0f), Quaternion.identity, transform);
+                Segment newSegment = Instantiate(segmentPrefab, new Vector3(startPosition.X, i, startPosition.Z) * config.Step, Quaternion.identity, transform);
+                newSegment.transform.localScale = Vector3.one * config.Step;
                 segments.Add(newSegment);
 
                 field[0, i, 0] = newSegment;
-                newSegment.PositionOnField = new PositionOnField(0, i, 0);
+                newSegment.PositionOnField = new PositionOnField(startPosition.X, i, startPosition.Z);
 
                 headSegment = newSegment;
             }
             
-
             SetRandomDirectionCoroutine = StartCoroutine(SetRandomDirection());
             StartCoroutine(Move());
         }
@@ -75,7 +72,7 @@ namespace Snake
         {
             while (true)
             {
-                yield return new WaitForSeconds(StepCooldown);
+                yield return new WaitForSeconds(config.StepCooldown);
 
                 Segment tailSegment = segments.First();
 
@@ -94,42 +91,37 @@ namespace Snake
 
                 CheckDirection();
 
-
-                Vector3 headPosition = headSegment.transform.position;
-                tailSegment.PositionOnField = new PositionOnField(headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z); ;
+                
+                tailSegment.PositionOnField = new PositionOnField(headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z);
 
                 switch (currentDirection)
                 {
                     case Direction.Up:
-                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y + Step, headPosition.z);
                         tailSegment.PositionOnField.Y++;
                         break;
 
                     case Direction.Down:
-                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y - Step, headPosition.z);
                         tailSegment.PositionOnField.Y--;
                         break;
 
                     case Direction.Left:
-                        tailSegment.transform.position = new Vector3(headPosition.x - Step, headPosition.y, headPosition.z);
                         tailSegment.PositionOnField.X--;
                         break;
 
                     case Direction.Right:
-                        tailSegment.transform.position = new Vector3(headPosition.x + Step, headPosition.y, headPosition.z);
                         tailSegment.PositionOnField.X++;
                         break;
 
                     case Direction.Forward:
-                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z + Step);
                         tailSegment.PositionOnField.Z++;
                         break;
 
                     case Direction.Backward:
-                        tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z - Step);
                         tailSegment.PositionOnField.Z--;
                         break;
                 }
+
+                tailSegment.transform.position = new Vector3(tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z) * config.Step;
 
                 headSegment.SetMaterial(tailMaterial);
                 tailSegment.SetMaterial(headMaterial);
@@ -150,7 +142,6 @@ namespace Snake
                     hasAppleToEat = true;
                 }
                 
-
                 field[tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z] = tailSegment;
 
                 headSegment = tailSegment;
@@ -164,19 +155,19 @@ namespace Snake
 
             possibleDirections.Remove(currentDirection);
 
-            if (headSegment.PositionOnField.X == 14 || currentDirection == Direction.Left)
+            if (headSegment.PositionOnField.X == config.FieldSizeX - 1 || currentDirection == Direction.Left)
                 possibleDirections.Remove(Direction.Right);
 
             if (headSegment.PositionOnField.X == 0 || currentDirection == Direction.Right)
                 possibleDirections.Remove(Direction.Left);
 
-            if (headSegment.PositionOnField.Y == 14 || currentDirection == Direction.Down)
+            if (headSegment.PositionOnField.Y == config.FieldSizeY - 1 || currentDirection == Direction.Down)
                 possibleDirections.Remove(Direction.Up);
 
             if (headSegment.PositionOnField.Y == 0 || currentDirection == Direction.Up)
                 possibleDirections.Remove(Direction.Down);
 
-            if (headSegment.PositionOnField.Z == 14 || currentDirection == Direction.Backward)
+            if (headSegment.PositionOnField.Z == config.FieldSizeZ - 1 || currentDirection == Direction.Backward)
                 possibleDirections.Remove(Direction.Forward);
 
             if (headSegment.PositionOnField.Z == 0 || currentDirection == Direction.Forward)
@@ -191,7 +182,7 @@ namespace Snake
             while (true)
             {
                 SetPossibleDirection();
-                yield return new WaitForSeconds(DirectionUpdateCooldown);
+                yield return new WaitForSeconds(config.DirectionUpdateCooldown);
             }
         }
 
@@ -230,7 +221,7 @@ namespace Snake
             switch (currentDirection)
             {
                 case Direction.Right:
-                    if (headSegment.PositionOnField.X == 14)
+                    if (headSegment.PositionOnField.X == config.FieldSizeX - 1)
                         SetPossibleDirection();
                     break;
 
@@ -240,7 +231,7 @@ namespace Snake
                     break;
 
                 case Direction.Up:
-                    if (headSegment.PositionOnField.Y == 14)
+                    if (headSegment.PositionOnField.Y == config.FieldSizeY - 1)
                         SetPossibleDirection();
                     break;
 
@@ -250,7 +241,7 @@ namespace Snake
                     break;
 
                 case Direction.Forward:
-                    if (headSegment.PositionOnField.Z == 14)
+                    if (headSegment.PositionOnField.Z == config.FieldSizeZ - 1)
                         SetPossibleDirection();
                     break;
 
