@@ -11,12 +11,27 @@ namespace Snake
     }
 
 
+    public class PositionOnField
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Z { get; set; }
+
+        public PositionOnField(int x, int y, int z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+    }
+
+
     public class LevelObject : MonoBehaviour
     {
         [SerializeField] LevelObjectTypes type = default;
 
 
-        public Vector3 PositionOnField { get; set; }
+        public PositionOnField PositionOnField { get; set; }
 
         public LevelObjectTypes Type
         {

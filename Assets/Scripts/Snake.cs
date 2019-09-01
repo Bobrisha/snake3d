@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 
 namespace Snake
@@ -10,8 +11,6 @@ namespace Snake
     {
         enum Direction
         {
-            None = 0,
-
             Up = 1,
             Down = 2,
             Left = 3,
@@ -23,23 +22,23 @@ namespace Snake
 
         const int StartSegmentsCount = 3;
         const float Step = 1f;
-        const float StepCooldown = 0.3f;
-        const float DirectionUpdateCooldown = 5f;
+        const float StepCooldown = 0.1f;
+        const float DirectionUpdateCooldown = 2f;
 
 
-        [SerializeField] LevelObject segmentPrefab = default;
+        [SerializeField] Segment segmentPrefab = default;
+        [SerializeField] Material headMaterial = default;
+        [SerializeField] Material tailMaterial = default;
 
         GameObject head;
 
-        List<LevelObject> segments = new List<LevelObject>();
+        List<Segment> segments = new List<Segment>();
 
         Direction currentDirection = default;
 
         LevelObject[,,] field;
 
-        Vector3 headPositionOnField;
-
-        LevelObject headSegment;
+        Segment headSegment;
 
 
         public void Init(LevelObject[,,] field)
@@ -48,11 +47,11 @@ namespace Snake
 
             for (int i = 0; i < StartSegmentsCount; i++)
             {
-                LevelObject newSegment = Instantiate(segmentPrefab, new Vector3(0.0f, i * Step, 0.0f), Quaternion.identity);
+                Segment newSegment = Instantiate(segmentPrefab, new Vector3(0.0f, i * Step, 0.0f), Quaternion.identity);
                 segments.Add(newSegment);
 
-                field[i, 0, 0] = newSegment;
-                newSegment.PositionOnField = new Vector3(i, 0, 0);
+                field[0, i, 0] = newSegment;
+                newSegment.PositionOnField = new PositionOnField(0, i, 0);
 
                 headSegment = newSegment;
             }
@@ -68,49 +67,89 @@ namespace Snake
             {
                 yield return new WaitForSeconds(StepCooldown);
 
-                LevelObject tailSegment = segments.First();
+                Segment tailSegment = segments.First();
                 segments.Remove(tailSegment);
-                field[(int)tailSegment.PositionOnField.x, (int)tailSegment.PositionOnField.y, (int)tailSegment.PositionOnField.z] = null;
+                field[tailSegment.PositionOnField.X, tailSegment.PositionOnField.Y, tailSegment.PositionOnField.Z] = null;
 
-                Vector3 headPosition = segments.Last().transform.position;
+               
+
+
+                CheckDirection();
+
+                Vector3 headPosition = headSegment.transform.position;
+                tailSegment.PositionOnField = headSegment.PositionOnField;
 
                 switch (currentDirection)
                 {
                     case Direction.Up:
                         tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y + Step, headPosition.z);
-                        tailSegment.PositionOnField = headPosition + Vector3.up;
+                        tailSegment.PositionOnField.Y++;
 
                         break;
 
                     case Direction.Down:
                         tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y - Step, headPosition.z);
-                        tailSegment.PositionOnField = headPosition + Vector3.down;
+                        tailSegment.PositionOnField.Y--;
                         break;
 
                     case Direction.Left:
                         tailSegment.transform.position = new Vector3(headPosition.x - Step, headPosition.y, headPosition.z);
-                        tailSegment.PositionOnField = headPosition + Vector3.left;
+                        tailSegment.PositionOnField.X--;
                         break;
 
                     case Direction.Right:
                         tailSegment.transform.position = new Vector3(headPosition.x + Step, headPosition.y, headPosition.z);
-                        tailSegment.PositionOnField = headPosition + Vector3.right;
+                        tailSegment.PositionOnField.X++;
                         break;
 
                     case Direction.Forward:
                         tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z + Step);
-                        tailSegment.PositionOnField = headPosition + Vector3.forward;
+                        tailSegment.PositionOnField.Z++;
                         break;
 
                     case Direction.Backward:
                         tailSegment.transform.position = new Vector3(headPosition.x, headPosition.y, headPosition.z - Step);
-                        tailSegment.PositionOnField = headPosition + Vector3.back;
+                        tailSegment.PositionOnField.Z--;
                         break;
                 }
+                headSegment.SetMaterial(tailMaterial);
 
                 segments.Add(tailSegment);
-                field[(int)tailSegment.PositionOnField.x, (int)tailSegment.PositionOnField.y, (int)tailSegment.PositionOnField.z] = tailSegment;
+                headSegment = tailSegment;
+
+                headSegment.SetMaterial(headMaterial);
+
+                print($" X : {headSegment.PositionOnField.X}  Y : {headSegment.PositionOnField.Y}  Z : {headSegment.PositionOnField.Z}");
+                field[headSegment.PositionOnField.X, headSegment.PositionOnField.Y, headSegment.PositionOnField.Z] = headSegment;
             }
+        }
+
+
+        void SetPossibleDirection()
+        {
+            List<Direction> possibleDirections = ((Direction[])Enum.GetValues(typeof(Direction))).ToList();
+
+            possibleDirections.Remove(currentDirection);
+
+            if (headSegment.PositionOnField.X == 14 || currentDirection == Direction.Left)
+                possibleDirections.Remove(Direction.Right);
+
+            if (headSegment.PositionOnField.X == 0 || currentDirection == Direction.Right)
+                possibleDirections.Remove(Direction.Left);
+
+            if (headSegment.PositionOnField.Y == 14 || currentDirection == Direction.Down)
+                possibleDirections.Remove(Direction.Up);
+
+            if (headSegment.PositionOnField.Y == 0 || currentDirection == Direction.Up)
+                possibleDirections.Remove(Direction.Down);
+
+            if (headSegment.PositionOnField.Z == 14 || currentDirection == Direction.Backward)
+                possibleDirections.Remove(Direction.Forward);
+
+            if (headSegment.PositionOnField.Z == 0 || currentDirection == Direction.Forward)
+                possibleDirections.Remove(Direction.Backward);
+            
+            currentDirection = possibleDirections[UnityEngine.Random.Range(0, possibleDirections.Count)];
         }
 
 
@@ -118,8 +157,45 @@ namespace Snake
         {
             while (true)
             {
-                currentDirection = (Direction)UnityEngine.Random.Range(1, 7);
+                SetPossibleDirection();
                 yield return new WaitForSeconds(DirectionUpdateCooldown);
+            }
+        }
+
+
+        void CheckDirection()
+        {
+            switch (currentDirection)
+            {
+                case Direction.Right:
+                    if (headSegment.PositionOnField.X == 14)
+                        SetPossibleDirection();
+                    break;
+
+                case Direction.Left:
+                    if (headSegment.PositionOnField.X == 0)
+                        SetPossibleDirection();
+                    break;
+
+                case Direction.Up:
+                    if (headSegment.PositionOnField.Y == 14)
+                        SetPossibleDirection();
+                    break;
+
+                case Direction.Down:
+                    if (headSegment.PositionOnField.Y == 0)
+                        SetPossibleDirection();
+                    break;
+
+                case Direction.Forward:
+                    if (headSegment.PositionOnField.Z == 14)
+                        SetPossibleDirection();
+                    break;
+
+                case Direction.Backward:
+                    if (headSegment.PositionOnField.Z == 0)
+                        SetPossibleDirection();
+                    break;
             }
         }
     }
