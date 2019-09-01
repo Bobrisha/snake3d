@@ -12,8 +12,9 @@ namespace Snake
         [SerializeField] GameConfig config = default;
         [SerializeField] Snake snakePrefab = default;
         [SerializeField] LevelObject applePrefab = default;
-
-
+        [SerializeField] GameObject cagePrefab = default;
+        
+        
         LevelObject[,,] field;
         PositionOnField[] startSnakesPositions;
 
@@ -29,6 +30,10 @@ namespace Snake
         void Awake()
         {
             field = new LevelObject[config.FieldSizeX, config.FieldSizeY, config.FieldSizeZ];
+
+            GameObject cage = Instantiate(cagePrefab, transform);
+            cage.transform.position = new Vector3(config.FieldSizeX - 1, config.FieldSizeY - 1, config.FieldSizeZ - 1) / 2.0f * config.Step;
+            cage.transform.localScale = new Vector3(config.FieldSizeX, config.FieldSizeY, config.FieldSizeZ) * config.Step * 1.001f;
 
             startSnakesPositions = new PositionOnField[]
             {
@@ -65,7 +70,7 @@ namespace Snake
         {
             for (int i = 0; i < config.SnakesCount; i++)
             {
-                Snake snake = Instantiate(snakePrefab);
+                Snake snake = Instantiate(snakePrefab, transform);
                 snake.Init(field, apples, config, startSnakesPositions[i]);
                 snakes.Add(snake);
             }

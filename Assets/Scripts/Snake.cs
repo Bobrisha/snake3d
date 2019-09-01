@@ -217,38 +217,15 @@ namespace Snake
                 StopCoroutine(SetRandomDirectionCoroutine);
                 return;
             }
-      
-            switch (currentDirection)
+            
+            if ((currentDirection == Direction.Right && headSegment.PositionOnField.X == config.FieldSizeX - 1)
+                || (currentDirection == Direction.Left && headSegment.PositionOnField.X == 0)
+                || (currentDirection == Direction.Up && headSegment.PositionOnField.Y == config.FieldSizeY - 1)
+                || (currentDirection == Direction.Down && headSegment.PositionOnField.Y == 0)
+                || (currentDirection == Direction.Forward && headSegment.PositionOnField.Z == config.FieldSizeZ - 1)
+                || (currentDirection == Direction.Backward && headSegment.PositionOnField.Z == 0))
             {
-                case Direction.Right:
-                    if (headSegment.PositionOnField.X == config.FieldSizeX - 1)
-                        SetPossibleDirection();
-                    break;
-
-                case Direction.Left:
-                    if (headSegment.PositionOnField.X == 0)
-                        SetPossibleDirection();
-                    break;
-
-                case Direction.Up:
-                    if (headSegment.PositionOnField.Y == config.FieldSizeY - 1)
-                        SetPossibleDirection();
-                    break;
-
-                case Direction.Down:
-                    if (headSegment.PositionOnField.Y == 0)
-                        SetPossibleDirection();
-                    break;
-
-                case Direction.Forward:
-                    if (headSegment.PositionOnField.Z == config.FieldSizeZ - 1)
-                        SetPossibleDirection();
-                    break;
-
-                case Direction.Backward:
-                    if (headSegment.PositionOnField.Z == 0)
-                        SetPossibleDirection();
-                    break;
+                SetPossibleDirection();
             }
         }
 
